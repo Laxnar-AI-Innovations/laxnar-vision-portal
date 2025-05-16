@@ -1,3 +1,4 @@
+
 import * as onnx from 'onnxruntime-web';
 
 // YOLOv5 model configuration
@@ -84,6 +85,13 @@ class YOLOv5Service {
       }
       
       console.log(`Model file size: ${modelArrayBuffer.byteLength} bytes`);
+      
+      // Validate the model file size - YOLOv5s should be around 14MB
+      if (modelArrayBuffer.byteLength < 1000000) {
+        // If the file is too small, it's probably not a valid model
+        throw new Error("Model file is too small and likely invalid. Expected YOLOv5s model to be ~14MB");
+      }
+      
       const modelData = new Uint8Array(modelArrayBuffer);
       
       try {

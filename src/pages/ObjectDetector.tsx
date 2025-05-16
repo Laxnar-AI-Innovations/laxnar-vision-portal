@@ -91,25 +91,24 @@ const ObjectDetector = () => {
     toast.info("Downloading YOLOv5 model...");
     
     try {
-      const modelUrl = 'https://github.com/ultralytics/yolov5/releases/download/v6.0/yolov5s.onnx';
-      const response = await fetch(modelUrl);
+      // Use the custom model from Google Drive
+      const googleDriveURL = "https://drive.google.com/file/d/1boXFc76v6kiEQM43m_qdIXbgnU1jhBV5/view?usp=drive_link";
       
-      if (!response.ok) {
-        throw new Error(`Failed to download model: ${response.status} ${response.statusText}`);
-      }
+      // Convert Google Drive link to a direct download link
+      const fileId = googleDriveURL.match(/\/d\/(.+?)\//)![1];
+      const directURL = `https://drive.google.com/uc?export=download&id=${fileId}`;
       
-      const blob = await response.blob();
+      toast.info("Preparing download from Google Drive...");
       
       // Create a download link for the model
-      const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = url;
+      a.href = directURL;
       a.download = 'yolov5s.onnx';
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       
-      toast.success("YOLOv5 model downloaded successfully.", { duration: 5000 });
+      toast.success("YOLOv5 model download initiated.", { duration: 5000 });
       toast.info(
         "Important: Place the downloaded model file in your project's 'public/models/' directory, then refresh the page.", 
         { duration: 10000 }
@@ -160,7 +159,7 @@ const ObjectDetector = () => {
                       disabled={isModelLoading}
                     >
                       <Download size={18} className="mr-2" />
-                      {isModelLoading ? "Loading Model..." : "Download Model"}
+                      {isModelLoading ? "Loading Model..." : "Download Custom Model"}
                     </Button>
                   )}
                   <Button 
@@ -206,6 +205,11 @@ const ObjectDetector = () => {
                       <p className="text-xs text-muted-foreground mt-1">
                         {modelLoadError}
                       </p>
+                      <div className="mt-4">
+                        <Button variant="outline" onClick={downloadModel} size="sm">
+                          Download Custom Model
+                        </Button>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -257,6 +261,17 @@ const ObjectDetector = () => {
                     {isModelLoaded ? 'Loaded' : isModelLoading ? 'Loading...' : modelLoadError ? 'Error' : 'Not Loaded'}
                   </span>
                 </div>
+              </div>
+
+              {/* Instructions for custom model */}
+              <div className="bg-blue-500/10 p-3 rounded-md border border-blue-500/20">
+                <h3 className="font-medium text-sm text-blue-500 mb-1">Custom Model Instructions</h3>
+                <ol className="list-decimal list-inside text-xs text-muted-foreground space-y-1">
+                  <li>Click "Download Custom Model" button</li>
+                  <li>Save the downloaded file as "yolov5s.onnx"</li>
+                  <li>Place the file in your "public/models/" folder</li>
+                  <li>Refresh the page to load the model</li>
+                </ol>
               </div>
 
               {/* Confidence threshold */}

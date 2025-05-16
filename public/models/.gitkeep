@@ -4,11 +4,13 @@
 This directory should contain the YOLOv5 ONNX model file:
 - yolov5s.onnx
 
-You can download the model from the application interface
-or directly from the YOLOv5 GitHub releases:
-https://github.com/ultralytics/yolov5/releases/download/v6.0/yolov5s.onnx
+You can download the custom model from:
+https://drive.google.com/file/d/1boXFc76v6kiEQM43m_qdIXbgnU1jhBV5/view?usp=drive_link
 
-After downloading, place the file in this directory and refresh the application.
+After downloading:
+1. Save the file as "yolov5s.onnx"
+2. Place it in this directory (public/models/)
+3. Refresh the application
 
 IMPORTANT TROUBLESHOOTING:
 If you're having issues with model loading:
