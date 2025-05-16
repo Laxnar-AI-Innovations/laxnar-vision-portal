@@ -13,17 +13,17 @@ const LaxnarLogo: React.FC<LaxnarLogoProps> = ({
   withText = true 
 }) => {
   const sizeClasses = {
-    sm: "h-8 w-auto",
-    md: "h-12 w-auto",
-    lg: "h-16 w-auto",
+    sm: "h-8 w-8",
+    md: "h-12 w-12",
+    lg: "h-16 w-16",
   };
 
   return (
     <div className={`flex items-center gap-3 ${className}`}>
-      {/* Placeholder for Laxnar.ai logo - replace with actual logo from www.laxnar.ai */}
-      <div className={`flex items-center justify-center bg-gradient-to-br from-laxnar-primary to-laxnar-light rounded-lg p-1 ${sizeClasses[size]}`}>
-        <div className="text-white font-bold">
-          {size === "sm" ? "L" : "LX"}
+      {/* Laxnar.ai logo */}
+      <div className={`flex items-center justify-center bg-laxnar-light rounded-lg ${sizeClasses[size]}`}>
+        <div className="text-white font-bold text-xl">
+          {size === "sm" ? "LX" : "LX"}
         </div>
       </div>
       

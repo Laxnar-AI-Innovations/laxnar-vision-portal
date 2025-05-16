@@ -20,6 +20,7 @@ const ObjectDetector = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isDetecting, setIsDetecting] = useState(false);
   const [hasWebcamPermission, setHasWebcamPermission] = useState(false);
+  const [webcamActive, setWebcamActive] = useState(false);
   
   // Detection parameters
   const [confidenceThreshold, setConfidenceThreshold] = useState(0.45);
@@ -43,19 +44,33 @@ const ObjectDetector = () => {
       
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        setHasWebcamPermission(true);
-        toast.success("Webcam connected successfully");
+        videoRef.current.onloadedmetadata = () => {
+          videoRef.current?.play();
+          setWebcamActive(true);
+          setHasWebcamPermission(true);
+          toast.success("Webcam connected successfully");
+        };
       }
     } catch (error) {
       console.error("Error accessing webcam:", error);
       toast.error("Could not access webcam. Please check permissions.");
+      setWebcamActive(false);
+      setHasWebcamPermission(false);
     }
   };
 
   // Toggle detection
   const toggleDetection = () => {
     if (!isDetecting) {
-      startDetection();
+      if (!webcamActive) {
+        startWebcam().then(() => {
+          setIsDetecting(true);
+          toast.info("Object detection started");
+        });
+      } else {
+        setIsDetecting(true);
+        toast.info("Object detection started");
+      }
     } else {
       stopDetection();
     }
@@ -63,11 +78,15 @@ const ObjectDetector = () => {
 
   // Start object detection
   const startDetection = () => {
-    setIsDetecting(true);
-    toast.info("Object detection started");
-    
-    // In a real implementation, we would initialize the YOLOv5 model here
-    // This is just a mockup for the UI
+    if (webcamActive) {
+      setIsDetecting(true);
+      toast.info("Object detection started");
+    } else {
+      startWebcam().then(() => {
+        setIsDetecting(true);
+        toast.info("Object detection started");
+      });
+    }
   };
 
   // Stop object detection
@@ -91,13 +110,14 @@ const ObjectDetector = () => {
         const stream = videoRef.current.srcObject as MediaStream;
         const tracks = stream.getTracks();
         tracks.forEach(track => track.stop());
+        setWebcamActive(false);
       }
     };
   }, []);
 
   // Mock detection rendering - in real app this would use the YOLOv5 model
   useEffect(() => {
-    if (!isDetecting || !canvasRef.current || !videoRef.current) return;
+    if (!isDetecting || !canvasRef.current || !videoRef.current || !webcamActive) return;
 
     const drawDetections = () => {
       const canvas = canvasRef.current;
@@ -109,8 +129,8 @@ const ObjectDetector = () => {
       if (!ctx) return;
 
       // Set canvas dimensions to match video
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
+      canvas.width = video.videoWidth || 640;
+      canvas.height = video.videoHeight || 480;
 
       // Clear canvas
       ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -158,7 +178,7 @@ const ObjectDetector = () => {
     // Set up animation loop for detections
     const interval = setInterval(drawDetections, detectionInterval);
     return () => clearInterval(interval);
-  }, [isDetecting, confidenceThreshold, showBoundingBoxes, showLabels, detectionInterval]);
+  }, [isDetecting, confidenceThreshold, showBoundingBoxes, showLabels, detectionInterval, webcamActive]);
 
   return (
     <div className="container mx-auto py-6 px-4">
@@ -181,7 +201,7 @@ const ObjectDetector = () => {
               </div>
             </CardHeader>
             <CardContent className="flex flex-col items-center justify-center p-1 bg-black rounded-md overflow-hidden relative">
-              {!hasWebcamPermission ? (
+              {!webcamActive ? (
                 <div className="flex flex-col items-center justify-center h-[480px] w-full">
                   <Camera size={48} className="text-muted-foreground mb-4" />
                   <p className="text-muted-foreground">Webcam access required</p>
@@ -196,7 +216,9 @@ const ObjectDetector = () => {
                       ref={videoRef}
                       autoPlay
                       playsInline
+                      muted
                       className="w-full h-[480px] object-contain"
+                      style={{ display: "block" }}
                     />
                     <canvas
                       ref={canvasRef}
