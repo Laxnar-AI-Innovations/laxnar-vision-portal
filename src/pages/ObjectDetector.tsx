@@ -11,9 +11,10 @@ import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Camera } from 'lucide-react';
+import { Camera, Download, Play, Pause } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
+import { useObjectDetection } from '@/hooks/useObjectDetection';
 
 const ObjectDetector = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -28,12 +29,16 @@ const ObjectDetector = () => {
   const [showLabels, setShowLabels] = useState(true);
   const [detectionInterval, setDetectionInterval] = useState(100);
   
-  // Mock detection results
-  const mockDetections = [
-    { label: "person", confidence: 0.92 },
-    { label: "chair", confidence: 0.87 },
-    { label: "laptop", confidence: 0.78 },
-  ];
+  // Use our custom hook for object detection
+  const { detections, isModelLoaded, isModelLoading } = useObjectDetection({
+    videoRef,
+    canvasRef,
+    isDetecting,
+    confidenceThreshold,
+    showBoundingBoxes,
+    showLabels,
+    detectionInterval
+  });
 
   // Start webcam stream
   const startWebcam = async () => {
@@ -76,23 +81,35 @@ const ObjectDetector = () => {
     }
   };
 
-  // Start object detection
-  const startDetection = () => {
-    if (webcamActive) {
-      setIsDetecting(true);
-      toast.info("Object detection started");
-    } else {
-      startWebcam().then(() => {
-        setIsDetecting(true);
-        toast.info("Object detection started");
-      });
-    }
-  };
-
   // Stop object detection
   const stopDetection = () => {
     setIsDetecting(false);
     toast.info("Object detection stopped");
+  };
+
+  // Download YOLOv5 model if not already downloaded
+  const downloadModel = async () => {
+    toast.info("Downloading YOLOv5 model...");
+    
+    try {
+      const modelUrl = 'https://github.com/ultralytics/yolov5/releases/download/v6.0/yolov5s.onnx';
+      const response = await fetch(modelUrl);
+      const blob = await response.blob();
+      
+      // Create a download link for the model
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'yolov5s.onnx';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      
+      toast.success("YOLOv5 model downloaded. Please place it in the 'public/models/' directory.");
+    } catch (error) {
+      console.error("Error downloading model:", error);
+      toast.error("Failed to download YOLOv5 model.");
+    }
   };
 
   // Initialize
@@ -115,71 +132,6 @@ const ObjectDetector = () => {
     };
   }, []);
 
-  // Mock detection rendering - in real app this would use the YOLOv5 model
-  useEffect(() => {
-    if (!isDetecting || !canvasRef.current || !videoRef.current || !webcamActive) return;
-
-    const drawDetections = () => {
-      const canvas = canvasRef.current;
-      const video = videoRef.current;
-      
-      if (!canvas || !video) return;
-      
-      const ctx = canvas.getContext('2d');
-      if (!ctx) return;
-
-      // Set canvas dimensions to match video
-      canvas.width = video.videoWidth || 640;
-      canvas.height = video.videoHeight || 480;
-
-      // Clear canvas
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      
-      // Draw the video frame
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-      // Only proceed if confidence threshold is met
-      if (showBoundingBoxes) {
-        // Mock detections - in real app would come from YOLOv5 model
-        const detections = [
-          { label: "person", confidence: 0.92, box: [50, 50, 200, 350] },
-          { label: "chair", confidence: 0.87, box: [300, 200, 100, 150] },
-          { label: "laptop", confidence: 0.78, box: [400, 300, 120, 80] },
-        ];
-
-        // Draw bounding boxes
-        detections.forEach(detection => {
-          if (detection.confidence >= confidenceThreshold) {
-            const [x, y, width, height] = detection.box;
-            
-            // Draw rectangle
-            ctx.strokeStyle = "#9b87f5";
-            ctx.lineWidth = 2;
-            ctx.strokeRect(x, y, width, height);
-            
-            // Draw label if enabled
-            if (showLabels) {
-              // Draw label background
-              ctx.fillStyle = "#9b87f5";
-              const label = `${detection.label} ${Math.round(detection.confidence * 100)}%`;
-              const textWidth = ctx.measureText(label).width + 10;
-              ctx.fillRect(x, y - 25, textWidth, 25);
-              
-              // Draw label text
-              ctx.fillStyle = "#ffffff";
-              ctx.font = "16px Arial";
-              ctx.fillText(label, x + 5, y - 8);
-            }
-          }
-        });
-      }
-    };
-
-    // Set up animation loop for detections
-    const interval = setInterval(drawDetections, detectionInterval);
-    return () => clearInterval(interval);
-  }, [isDetecting, confidenceThreshold, showBoundingBoxes, showLabels, detectionInterval, webcamActive]);
-
   return (
     <div className="container mx-auto py-6 px-4">
       <div className="flex flex-col lg:flex-row gap-6">
@@ -192,12 +144,35 @@ const ObjectDetector = () => {
                   <CardTitle>YOLOv5 Object Detector</CardTitle>
                   <CardDescription>Real-time object detection using webcam feed</CardDescription>
                 </div>
-                <Button 
-                  onClick={toggleDetection} 
-                  className={isDetecting ? "bg-red-500 hover:bg-red-600" : "bg-laxnar-primary hover:bg-laxnar-primary/90"}
-                >
-                  {isDetecting ? "Stop Detection" : "Start Detection"}
-                </Button>
+                <div className="flex gap-2">
+                  {!isModelLoaded && (
+                    <Button 
+                      onClick={downloadModel} 
+                      className="bg-laxnar-primary hover:bg-laxnar-primary/90"
+                      disabled={isModelLoading}
+                    >
+                      <Download size={18} className="mr-2" />
+                      {isModelLoading ? "Loading Model..." : "Download Model"}
+                    </Button>
+                  )}
+                  <Button 
+                    onClick={toggleDetection} 
+                    className={isDetecting ? "bg-red-500 hover:bg-red-600" : "bg-laxnar-primary hover:bg-laxnar-primary/90"}
+                    disabled={!isModelLoaded && !webcamActive}
+                  >
+                    {isDetecting ? (
+                      <>
+                        <Pause size={18} className="mr-2" />
+                        Stop Detection
+                      </>
+                    ) : (
+                      <>
+                        <Play size={18} className="mr-2" />
+                        Start Detection
+                      </>
+                    )}
+                  </Button>
+                </div>
               </div>
             </CardHeader>
             <CardContent className="flex flex-col items-center justify-center p-1 bg-black rounded-md overflow-hidden relative">
@@ -217,12 +192,12 @@ const ObjectDetector = () => {
                       autoPlay
                       playsInline
                       muted
-                      className="w-full h-[480px] object-contain"
-                      style={{ display: "block" }}
+                      className="w-full h-[480px] object-contain hidden"
+                      style={{ display: "none" }}
                     />
                     <canvas
                       ref={canvasRef}
-                      className="absolute top-0 left-0 w-full h-full"
+                      className="w-full h-[480px] object-contain"
                     />
                     {isDetecting && (
                       <div className="absolute top-4 left-4 bg-black/50 rounded-full px-3 py-1 text-white text-xs flex items-center">
@@ -249,6 +224,16 @@ const ObjectDetector = () => {
               <CardDescription>Adjust parameters for object detection</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
+              {/* Model status */}
+              <div className="bg-secondary/50 p-3 rounded-md">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">YOLOv5 Model:</span>
+                  <span className={`text-sm px-2 py-1 rounded ${isModelLoaded ? 'bg-green-500/20 text-green-500' : 'bg-yellow-500/20 text-yellow-500'}`}>
+                    {isModelLoaded ? 'Loaded' : isModelLoading ? 'Loading...' : 'Not Loaded'}
+                  </span>
+                </div>
+              </div>
+
               {/* Confidence threshold */}
               <div className="space-y-2">
                 <div className="flex justify-between">
@@ -311,9 +296,9 @@ const ObjectDetector = () => {
               {/* Detected objects */}
               <div className="space-y-2">
                 <h3 className="font-medium">Detected Objects</h3>
-                {isDetecting ? (
+                {isDetecting && detections.length > 0 ? (
                   <div className="space-y-2 max-h-32 overflow-y-auto">
-                    {mockDetections.map((detection, index) => (
+                    {detections.map((detection, index) => (
                       <div key={index} className="flex items-center justify-between bg-secondary p-2 rounded-md">
                         <span>{detection.label}</span>
                         <span className="text-sm px-2 py-1 rounded bg-laxnar-primary/20 text-laxnar-primary">
@@ -324,16 +309,20 @@ const ObjectDetector = () => {
                   </div>
                 ) : (
                   <p className="text-sm text-muted-foreground">
-                    Start detection to see results
+                    {isDetecting ? "No objects detected" : "Start detection to see results"}
                   </p>
                 )}
               </div>
 
-              {/* Notes */}
+              {/* Instructions */}
               <div className="bg-secondary/50 p-3 rounded-md mt-6">
                 <p className="text-xs text-muted-foreground">
-                  Note: This is a demo interface. In a production environment, YOLOv5 model would be 
-                  loaded and processing the webcam feed in real-time.
+                  To use YOLOv5 model:
+                  <ol className="list-decimal list-inside mt-1">
+                    <li>Download the model using the button above</li>
+                    <li>Place the model in the 'public/models/' folder</li>
+                    <li>Reload the application</li>
+                  </ol>
                 </p>
               </div>
             </CardContent>

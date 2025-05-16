@@ -1,6 +1,4 @@
 
-@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -9,42 +7,53 @@
   :root {
     --background: 240 10% 3.9%;
     --foreground: 0 0% 98%;
-    
-    --card: 240 10% 3.9%;
-    --card-foreground: 0 0% 98%;
-    
-    --popover: 240 10% 3.9%;
-    --popover-foreground: 0 0% 98%;
-    
-    --primary: 252 73% 75%;
-    --primary-foreground: 0 0% 98%;
-    
-    --secondary: 240 3.7% 15.9%;
-    --secondary-foreground: 0 0% 98%;
-    
+
     --muted: 240 3.7% 15.9%;
     --muted-foreground: 240 5% 64.9%;
-    
-    --accent: 240 3.7% 15.9%;
-    --accent-foreground: 0 0% 98%;
-    
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-    
+
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
+
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
+
     --border: 240 3.7% 15.9%;
     --input: 240 3.7% 15.9%;
-    --ring: 240 4.9% 83.9%;
 
-    --radius: 0.75rem;
+    --primary: 240 5.9% 10%;
+    --primary-foreground: 0 0% 98%;
 
-    --sidebar-background: 240 10% 5%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 252 73% 75%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
+
+    --accent: 240 3.7% 15.9%;
+    --accent-foreground: 0 0% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+
+    --ring: 240 3.7% 15.9%;
+
+    --radius: 0.5rem;
+
+    --sidebar-width: 18rem;
+    --sidebar-width-collapsed: 4rem;
+    --sidebar-background: 240 10% 3.9%;
+    --sidebar-foreground: 0 0% 98%;
+    --sidebar-muted: 240 3.7% 15.9%;
+    --sidebar-muted-foreground: 240 5% 64.9%;
+    --sidebar-card: 240 10% 3.9%;
+    --sidebar-card-foreground: 0 0% 98%;
     --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 252 73% 75%;
+    --sidebar-primary: 263.4 70% 50.4%;
+    --sidebar-primary-foreground: 210 20% 98%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    
+    /* Laxnar theme colors */
+    --laxnar-primary: 255 83% 73%;
+    --laxnar-light: 240 13% 18%;
+    --laxnar-dark: 252 20% 10%;
   }
 }
 
@@ -53,70 +62,41 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground antialiased;
+    @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
-  }
-  
-  /* Glass effect for cards */
-  .glass-card {
-    @apply bg-opacity-20 backdrop-filter backdrop-blur-lg border border-white/10;
   }
 }
 
+/* Animation for AI processing dots */
 .ai-processing-dot {
-  @apply inline-block h-2 w-2 rounded-full bg-laxnar-primary;
-  animation: pulse 1.5s infinite ease-in-out;
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: currentColor;
+  opacity: 0.7;
+  animation: pulse 1.2s infinite;
 }
 
 .ai-processing-dot:nth-child(2) {
-  animation-delay: 0.5s;
+  animation-delay: 0.2s;
 }
 
 .ai-processing-dot:nth-child(3) {
-  animation-delay: 1s;
+  animation-delay: 0.4s;
 }
 
 @keyframes pulse {
-  0%, 100% {
-    opacity: 0.2;
+  0% {
+    opacity: 0.3;
     transform: scale(0.8);
   }
   50% {
     opacity: 1;
     transform: scale(1.2);
   }
-}
-
-.model-card {
-  transition: all 0.3s ease;
-}
-
-.model-card:hover {
-  transform: translateY(-5px);
-}
-
-.fade-in {
-  animation: fadeIn 0.5s ease-out;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
+  100% {
+    opacity: 0.3;
+    transform: scale(0.8);
   }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* Hide scrollbar for Chrome, Safari and Opera */
-.no-scrollbar::-webkit-scrollbar {
-  display: none;
-}
-
-/* Hide scrollbar for IE, Edge and Firefox */
-.no-scrollbar {
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;  /* Firefox */
 }
