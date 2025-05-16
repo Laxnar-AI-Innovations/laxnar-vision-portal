@@ -1,3 +1,4 @@
+
 import * as onnx from 'onnxruntime-web';
 
 // YOLOv5 model configuration
@@ -62,9 +63,10 @@ class YOLOv5Service {
       };
       
       // Try to use WebGL backend for better performance
-      const options = {
+      // Fix: Use correct literal type for graphOptimizationLevel
+      const options: onnx.InferenceSession.SessionOptions = {
         executionProviders: ['webgl'],
-        graphOptimizationLevel: 'all',
+        graphOptimizationLevel: 'all' as const, // Explicitly specify as literal type 'all'
       };
       
       // Create inference session with binary data instead of URL

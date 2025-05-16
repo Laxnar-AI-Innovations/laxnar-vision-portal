@@ -53,9 +53,6 @@ export const useObjectDetection = ({
             }, backoffTime);
           } else {
             toast.error("Failed to load YOLOv5 model after multiple attempts. Please check if the model file exists in the public/models directory.");
-          }
-        } finally {
-          if (loadRetryCount.current >= MAX_RETRIES) {
             setIsModelLoading(false);
           }
         }
