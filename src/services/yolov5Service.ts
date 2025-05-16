@@ -1,4 +1,3 @@
-
 import * as onnx from 'onnxruntime-web';
 
 // YOLOv5 model configuration
@@ -50,10 +49,16 @@ class YOLOv5Service {
     try {
       this.modelLoading = true;
       
-      // Set ONNX runtime configurations
+      console.log('Loading YOLOv5 model...');
+      
+      // Set up ONNX runtime environment
+      // Fix: Use the correct property names for wasmPaths
+      const wasmPath = '/node_modules/onnxruntime-web/dist';
       onnx.env.wasm.wasmPaths = {
-        'onnxruntime-web.wasm': '/node_modules/onnxruntime-web/dist/onnxruntime-web.wasm',
-        'onnxruntime-web-simd.wasm': '/node_modules/onnxruntime-web/dist/onnxruntime-web-simd.wasm'
+        'ort-wasm.wasm': `${wasmPath}/ort-wasm.wasm`,
+        'ort-wasm-threaded.wasm': `${wasmPath}/ort-wasm-threaded.wasm`,
+        'ort-wasm-simd.wasm': `${wasmPath}/ort-wasm-simd.wasm`,
+        'ort-wasm-simd-threaded.wasm': `${wasmPath}/ort-wasm-simd-threaded.wasm`,
       };
       
       // Try to use WebGL backend for better performance
@@ -62,8 +67,17 @@ class YOLOv5Service {
         graphOptimizationLevel: 'all',
       };
       
-      console.log('Loading YOLOv5 model...');
-      this.session = await onnx.InferenceSession.create(modelConfig.modelUrl, options);
+      // Create inference session with binary data instead of URL
+      // Fix: Fetch the model data as ArrayBuffer and create the session with it
+      const modelResponse = await fetch(modelConfig.modelUrl);
+      if (!modelResponse.ok) {
+        throw new Error(`Failed to fetch model: ${modelResponse.status} ${modelResponse.statusText}`);
+      }
+      
+      const modelArrayBuffer = await modelResponse.arrayBuffer();
+      const modelData = new Uint8Array(modelArrayBuffer);
+      
+      this.session = await onnx.InferenceSession.create(modelData, options);
       
       this.modelLoaded = true;
       this.modelLoading = false;

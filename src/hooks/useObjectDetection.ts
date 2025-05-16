@@ -26,6 +26,8 @@ export const useObjectDetection = ({
   const [isModelLoaded, setIsModelLoaded] = useState(false);
   const [isModelLoading, setIsModelLoading] = useState(false);
   const detectionIntervalRef = useRef<number | null>(null);
+  const loadRetryCount = useRef(0);
+  const MAX_RETRIES = 3;
   
   // Load the model
   useEffect(() => {
@@ -35,12 +37,27 @@ export const useObjectDetection = ({
           setIsModelLoading(true);
           await yolov5Service.loadModel();
           setIsModelLoaded(true);
+          loadRetryCount.current = 0;
           toast.success("YOLOv5 model loaded successfully");
         } catch (error) {
           console.error("Failed to load YOLOv5 model:", error);
-          toast.error("Failed to load YOLOv5 model. Check console for details.");
+          
+          // Implement retry logic with backoff
+          if (loadRetryCount.current < MAX_RETRIES) {
+            loadRetryCount.current += 1;
+            const backoffTime = 1000 * loadRetryCount.current; // Progressive backoff
+            toast.error(`Model loading failed. Retrying in ${backoffTime/1000}s...`);
+            
+            setTimeout(() => {
+              setIsModelLoading(false); // Reset loading state to trigger a new attempt
+            }, backoffTime);
+          } else {
+            toast.error("Failed to load YOLOv5 model after multiple attempts. Please check if the model file exists in the public/models directory.");
+          }
         } finally {
-          setIsModelLoading(false);
+          if (loadRetryCount.current >= MAX_RETRIES) {
+            setIsModelLoading(false);
+          }
         }
       }
     };

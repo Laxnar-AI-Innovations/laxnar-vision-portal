@@ -1,2 +1,11 @@
 
-# This directory will contain the YOLOv5 ONNX model
+# YOLOv5 Model Directory
+
+This directory should contain the YOLOv5 ONNX model file:
+- yolov5s.onnx
+
+You can download the model from the application interface
+or directly from the YOLOv5 GitHub releases:
+https://github.com/ultralytics/yolov5/releases/download/v6.0/yolov5s.onnx
+
+After downloading, place the file in this directory and refresh the application.

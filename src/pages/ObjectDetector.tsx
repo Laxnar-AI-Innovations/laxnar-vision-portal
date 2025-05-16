@@ -1,4 +1,3 @@
-
 import React, { useRef, useState, useEffect } from 'react';
 import { 
   Card, 
@@ -94,6 +93,11 @@ const ObjectDetector = () => {
     try {
       const modelUrl = 'https://github.com/ultralytics/yolov5/releases/download/v6.0/yolov5s.onnx';
       const response = await fetch(modelUrl);
+      
+      if (!response.ok) {
+        throw new Error(`Failed to download model: ${response.status} ${response.statusText}`);
+      }
+      
       const blob = await response.blob();
       
       // Create a download link for the model
@@ -105,10 +109,13 @@ const ObjectDetector = () => {
       a.click();
       document.body.removeChild(a);
       
-      toast.success("YOLOv5 model downloaded. Please place it in the 'public/models/' directory.");
+      toast.success("YOLOv5 model downloaded. Please place it in the 'public/models/' directory and then refresh the page.");
+      
+      // Provide additional instructions
+      toast.info("After placing the model file, you'll need to refresh the page for the changes to take effect.", { duration: 6000 });
     } catch (error) {
       console.error("Error downloading model:", error);
-      toast.error("Failed to download YOLOv5 model.");
+      toast.error(`Failed to download YOLOv5 model: ${error}`);
     }
   };
 
@@ -321,7 +328,7 @@ const ObjectDetector = () => {
                   <ol className="list-decimal list-inside mt-1">
                     <li>Download the model using the button above</li>
                     <li>Place the model in the 'public/models/' folder</li>
-                    <li>Reload the application</li>
+                    <li>Refresh the page to apply changes</li>
                   </ol>
                 </p>
               </div>
