@@ -9,3 +9,10 @@ or directly from the YOLOv5 GitHub releases:
 https://github.com/ultralytics/yolov5/releases/download/v6.0/yolov5s.onnx
 
 After downloading, place the file in this directory and refresh the application.
+
+IMPORTANT TROUBLESHOOTING:
+If you're having issues with model loading:
+1. Ensure the model file is named exactly "yolov5s.onnx"
+2. The file should be placed directly in this directory (public/models/)
+3. The file should be a valid ONNX model (~14MB in size)
+4. After placing the file, completely refresh your browser

@@ -25,6 +25,7 @@ export const useObjectDetection = ({
   const [detections, setDetections] = useState<DetectionResult[]>([]);
   const [isModelLoaded, setIsModelLoaded] = useState(false);
   const [isModelLoading, setIsModelLoading] = useState(false);
+  const [modelLoadError, setModelLoadError] = useState<string | null>(null);
   const detectionIntervalRef = useRef<number | null>(null);
   const loadRetryCount = useRef(0);
   const MAX_RETRIES = 3;
@@ -35,12 +36,14 @@ export const useObjectDetection = ({
       if (!isModelLoaded && !isModelLoading) {
         try {
           setIsModelLoading(true);
+          setModelLoadError(null);
           await yolov5Service.loadModel();
           setIsModelLoaded(true);
           loadRetryCount.current = 0;
           toast.success("YOLOv5 model loaded successfully");
         } catch (error) {
           console.error("Failed to load YOLOv5 model:", error);
+          setModelLoadError(error instanceof Error ? error.message : String(error));
           
           // Implement retry logic with backoff
           if (loadRetryCount.current < MAX_RETRIES) {
@@ -156,6 +159,7 @@ export const useObjectDetection = ({
   return {
     detections,
     isModelLoaded,
-    isModelLoading
+    isModelLoading,
+    modelLoadError
   };
 };

@@ -1,4 +1,3 @@
-
 import * as onnx from 'onnxruntime-web';
 
 // YOLOv5 model configuration
@@ -52,8 +51,13 @@ class YOLOv5Service {
       
       console.log('Loading YOLOv5 model...');
       
+      // First check if the model file exists
+      const modelCheckResponse = await fetch(modelConfig.modelUrl, { method: 'HEAD' });
+      if (!modelCheckResponse.ok) {
+        throw new Error(`Model file not found at ${modelConfig.modelUrl}. HTTP status: ${modelCheckResponse.status}`);
+      }
+      
       // Set up ONNX runtime environment
-      // Fix: Use the correct property names for wasmPaths
       const wasmPath = '/node_modules/onnxruntime-web/dist';
       onnx.env.wasm.wasmPaths = {
         'ort-wasm.wasm': `${wasmPath}/ort-wasm.wasm`,
@@ -63,23 +67,35 @@ class YOLOv5Service {
       };
       
       // Try to use WebGL backend for better performance
-      // Fix: Use correct literal type for graphOptimizationLevel
       const options: onnx.InferenceSession.SessionOptions = {
         executionProviders: ['webgl'],
         graphOptimizationLevel: 'all' as const, // Explicitly specify as literal type 'all'
       };
       
-      // Create inference session with binary data instead of URL
-      // Fix: Fetch the model data as ArrayBuffer and create the session with it
+      // Fetch the model data as ArrayBuffer and create the session with it
       const modelResponse = await fetch(modelConfig.modelUrl);
       if (!modelResponse.ok) {
         throw new Error(`Failed to fetch model: ${modelResponse.status} ${modelResponse.statusText}`);
       }
       
       const modelArrayBuffer = await modelResponse.arrayBuffer();
+      if (modelArrayBuffer.byteLength === 0) {
+        throw new Error("Model file is empty");
+      }
+      
+      console.log(`Model file size: ${modelArrayBuffer.byteLength} bytes`);
       const modelData = new Uint8Array(modelArrayBuffer);
       
-      this.session = await onnx.InferenceSession.create(modelData, options);
+      try {
+        this.session = await onnx.InferenceSession.create(modelData, options);
+      } catch (sessionError) {
+        console.error("Error creating inference session:", sessionError);
+        
+        // Try with CPU provider as fallback
+        console.log("Falling back to CPU provider...");
+        options.executionProviders = ['wasm'];
+        this.session = await onnx.InferenceSession.create(modelData, options);
+      }
       
       this.modelLoaded = true;
       this.modelLoading = false;
@@ -300,6 +316,10 @@ class YOLOv5Service {
   ): Promise<DetectionResult[]> {
     if (!this.modelLoaded) {
       await this.loadModel();
+    }
+    
+    if (!this.session) {
+      throw new Error("Model session is not initialized");
     }
     
     // Preprocess the image

@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Camera, Download, Play, Pause } from 'lucide-react';
+import { Camera, Download, Play, Pause, AlertTriangle } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 import { useObjectDetection } from '@/hooks/useObjectDetection';
@@ -29,7 +29,7 @@ const ObjectDetector = () => {
   const [detectionInterval, setDetectionInterval] = useState(100);
   
   // Use our custom hook for object detection
-  const { detections, isModelLoaded, isModelLoading } = useObjectDetection({
+  const { detections, isModelLoaded, isModelLoading, modelLoadError } = useObjectDetection({
     videoRef,
     canvasRef,
     isDetecting,
@@ -86,7 +86,7 @@ const ObjectDetector = () => {
     toast.info("Object detection stopped");
   };
 
-  // Download YOLOv5 model if not already downloaded
+  // Download YOLOv5 model
   const downloadModel = async () => {
     toast.info("Downloading YOLOv5 model...");
     
@@ -109,10 +109,11 @@ const ObjectDetector = () => {
       a.click();
       document.body.removeChild(a);
       
-      toast.success("YOLOv5 model downloaded. Please place it in the 'public/models/' directory and then refresh the page.");
-      
-      // Provide additional instructions
-      toast.info("After placing the model file, you'll need to refresh the page for the changes to take effect.", { duration: 6000 });
+      toast.success("YOLOv5 model downloaded successfully.", { duration: 5000 });
+      toast.info(
+        "Important: Place the downloaded model file in your project's 'public/models/' directory, then refresh the page.", 
+        { duration: 10000 }
+      );
     } catch (error) {
       console.error("Error downloading model:", error);
       toast.error(`Failed to download YOLOv5 model: ${error}`);
@@ -165,7 +166,7 @@ const ObjectDetector = () => {
                   <Button 
                     onClick={toggleDetection} 
                     className={isDetecting ? "bg-red-500 hover:bg-red-600" : "bg-laxnar-primary hover:bg-laxnar-primary/90"}
-                    disabled={!isModelLoaded && !webcamActive}
+                    disabled={!isModelLoaded || !webcamActive}
                   >
                     {isDetecting ? (
                       <>
@@ -183,6 +184,13 @@ const ObjectDetector = () => {
               </div>
             </CardHeader>
             <CardContent className="flex flex-col items-center justify-center p-1 bg-black rounded-md overflow-hidden relative">
+              {modelLoadError && !webcamActive && (
+                <div className="absolute top-0 right-0 left-0 bg-red-500/90 text-white px-4 py-2 flex items-center gap-2">
+                  <AlertTriangle size={18} />
+                  <span className="text-sm">Model loading error: Please download and place the model in public/models/</span>
+                </div>
+              )}
+              
               {!webcamActive ? (
                 <div className="flex flex-col items-center justify-center h-[480px] w-full">
                   <Camera size={48} className="text-muted-foreground mb-4" />
@@ -190,6 +198,16 @@ const ObjectDetector = () => {
                   <Button onClick={startWebcam} variant="outline" className="mt-4">
                     Enable Webcam
                   </Button>
+                  
+                  {modelLoadError && (
+                    <div className="mt-6 bg-red-500/20 p-4 rounded-md max-w-md text-center">
+                      <AlertTriangle className="mx-auto mb-2 text-red-500" size={24} />
+                      <p className="text-sm text-red-500 font-medium">Model loading error</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {modelLoadError}
+                      </p>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <>
@@ -235,8 +253,8 @@ const ObjectDetector = () => {
               <div className="bg-secondary/50 p-3 rounded-md">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium">YOLOv5 Model:</span>
-                  <span className={`text-sm px-2 py-1 rounded ${isModelLoaded ? 'bg-green-500/20 text-green-500' : 'bg-yellow-500/20 text-yellow-500'}`}>
-                    {isModelLoaded ? 'Loaded' : isModelLoading ? 'Loading...' : 'Not Loaded'}
+                  <span className={`text-sm px-2 py-1 rounded ${isModelLoaded ? 'bg-green-500/20 text-green-500' : modelLoadError ? 'bg-red-500/20 text-red-500' : 'bg-yellow-500/20 text-yellow-500'}`}>
+                    {isModelLoaded ? 'Loaded' : isModelLoading ? 'Loading...' : modelLoadError ? 'Error' : 'Not Loaded'}
                   </span>
                 </div>
               </div>
